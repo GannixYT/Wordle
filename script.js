@@ -1,12 +1,16 @@
 /***********************
  * Config
-***********************/
-const WORD_LENGTH = 5;
+ ***********************/
+const ALLOWED_LENGTHS = [3, 4, 5, 6, 7];
+// Default (will be overridden by #lenSelect if present)
+let WORD_LENGTH = 5;
+
 const MAX_GUESSES = 6;
 const STRICT_VALIDATION = true;
 
 let SOLUTIONS = [];
-const DICTIONARY = new Set();
+const DICTIONARY = new Set();   // master: all words (3–7)
+let CURRENT_WORDS = new Set();  // filtered by current WORD_LENGTH
 
 const REMOTE_WORDLIST_URL = "wordlist.txt";
 
@@ -14,6 +18,7 @@ const REMOTE_WORDLIST_URL = "wordlist.txt";
 const DAILY_MODE = false;
 const DAILY_EPOCH = "2026-01-01";
 
+// (Your extras – kept intact)
 const EXTRA_WORDS = [
   "ALGAE","AGILE","AGLOW","AMITY","APHID","APRON","ARISE","AROMA","ARROW","ASHEN",
   "ASKEW","AVERT","AVIAN","AVOID","AWAIT","AWAKE","AWARE","AWASH",
@@ -148,12 +153,15 @@ let guesses = [];
 let statusesGrid = [];
 let gameOver = false;
 
-const boardEl    = document.getElementById("board");
-const keyboardEl = document.getElementById("keyboard");
-const statusEl   = document.getElementById("status");
-const shareBtn   = document.getElementById("shareBtn");
-const restartBtn = document.getElementById("restartBtn");
+const boardEl       = document.getElementById("board");
+const keyboardEl    = document.getElementById("keyboard");
+const statusEl      = document.getElementById("status");
+const shareBtn      = document.getElementById("shareBtn");
+const restartBtn    = document.getElementById("restartBtn");
 const wordFileInput = document.getElementById("wordFile");
+// Optional controls (if present in your HTML)
+const lenSelect     = document.getElementById("lenSelect");
+const applyLenBtn   = document.getElementById("applyLenBtn");
 
 /***********************
  * Bootstrap
@@ -172,7 +180,7 @@ updateStatus("Loading word list…");
       added += mergeWordsFromText(embeddedEl.textContent);
     }
 
-    // 2) Built-in extras (merge always)
+    // 2) Built-in extras (always)
     added += mergeWordsFromArray(EXTRA_WORDS);
 
     // 3) Remote file (if hosting over http/https)
@@ -180,7 +188,7 @@ updateStatus("Loading word list…");
       try {
         added += await loadWordListFromUrl(REMOTE_WORDLIST_URL);
       } catch (_) {
-        // ignore; we will fall back to manual picker if we still have none
+        // ignore; we will fall back to manual picker if none loaded
       }
     }
 
@@ -196,9 +204,9 @@ updateStatus("Loading word list…");
       }
     }
 
-    SOLUTIONS = Array.from(DICTIONARY);
-    pickNewAnswer();
-    updateStatus(`Loading Complete!`);
+    // Initial length from <select> if present
+    const desiredLen = lenSelect ? parseInt(lenSelect.value || "5", 10) : 5;
+    rebuildForLength(desiredLen);
   } catch (err) {
     console.warn("Init failed:", err);
     updateStatus('Could not initialize. See console for details or use "Load list".');
@@ -210,17 +218,8 @@ updateStatus("Loading word list…");
  ***********************/
 let isRevealing = false;
 const _timeouts = [];
-
-function later(fn, ms) {
-  const id = setTimeout(fn, ms);
-  _timeouts.push(id);
-  return id;
-}
-function clearAllTimeouts() {
-  while (_timeouts.length) {
-    clearTimeout(_timeouts.pop());
-  }
-}
+function later(fn, ms) { const id = setTimeout(fn, ms); _timeouts.push(id); return id; }
+function clearAllTimeouts() { while (_timeouts.length) { clearTimeout(_timeouts.pop()); } }
 
 wordFileInput?.addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
@@ -229,13 +228,13 @@ wordFileInput?.addEventListener("change", async (e) => {
     updateStatus(`Reading ${file.name}…`);
     const text = await file.text();
     const added = mergeWordsFromText(text);
-    SOLUTIONS = Array.from(DICTIONARY);
-    if (SOLUTIONS.length === 0) {
-      updateStatus("The file had no usable 5-letter words.");
+    if (DICTIONARY.size === 0) {
+      updateStatus("The file had no usable words.");
       return;
     }
-    pickNewAnswer();
-    updateStatus(`Loaded +${added} words; answers now ${SOLUTIONS.length}; total ${DICTIONARY.size}.`);
+    // Rebuild for current length (or default) after merge
+    rebuildForLength(WORD_LENGTH);
+    updateStatus(`Loaded +${added} words; total unique ${DICTIONARY.size}.`);
   } catch (err) {
     console.error("[Word List Loader] Failed:", err);
     updateStatus("Failed to load list. See console for details.");
@@ -253,32 +252,73 @@ function mergeWordsFromArray(arr) {
   let added = 0;
   for (const raw of arr || []) {
     const w = normalizeWord(raw);
-    if (/^[A-Z]{5}$/.test(w) && !DICTIONARY.has(w)) {
-      DICTIONARY.add(w); added++;
-    }
+    if (/^[A-Z]{3,7}$/.test(w) && !DICTIONARY.has(w)) { DICTIONARY.add(w); added++; }
   }
   return added;
 }
 
 function mergeWordsFromText(text) {
-  if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM
   const lines = (text || "").split(/\r?\n/);
   const before = DICTIONARY.size;
   for (let line of lines) {
     if (!line) continue;
     const w = normalizeWord(line);
-    if (/^[A-Z]{5}$/.test(w)) DICTIONARY.add(w);
+    if (/^[A-Z]{3,7}$/.test(w)) DICTIONARY.add(w);
   }
   return DICTIONARY.size - before;
 }
 
 function normalizeWord(s){
   return (s || "").trim()
-    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[\u200B-\u200D\uFEFF]/g,'')
-    .replace(/[’'`´]/g,'')
-    .replace(/[^A-Za-z]/g,'')
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')  // accents
+    .replace(/[\u200B-\u200D\uFEFF]/g,'')              // zero-width/BOM
+    .replace(/[’'`´]/g,'')                             // apostrophes
+    .replace(/[^A-Za-z]/g,'')                          // letters only
     .toUpperCase();
+}
+
+/***********************
+ * Length handling
+ ***********************/
+function clampLength(n){ return ALLOWED_LENGTHS.includes(n) ? n : 5; }
+
+function rebuildForLength(newLen){
+  clearAllTimeouts();
+  isRevealing = false;
+
+  WORD_LENGTH = clampLength(newLen);
+
+  CURRENT_WORDS = new Set([...DICTIONARY].filter(w => w.length === WORD_LENGTH));
+
+  // Reset state
+  currentRow = 0;
+  currentCol = 0;
+  guesses = [];
+  statusesGrid = [];
+  gameOver = false;
+  shareBtn && (shareBtn.disabled = true);
+  statusEl.textContent = "";
+
+  // Rebuild the board for the chosen WORD_LENGTH
+  boardEl.innerHTML = "";
+  buildBoard();
+  resetKeyboard();
+
+  if (CURRENT_WORDS.size === 0) {
+    gameOver = true;  // block input
+    answer = null;
+    updateStatus(`No words of length ${WORD_LENGTH} in your list.`);
+    return;
+  }
+
+  SOLUTIONS = Array.from(CURRENT_WORDS);
+
+  // (Optional) Wordle-like: allow plurals as guesses but not answers
+  // SOLUTIONS = SOLUTIONS.filter(w => !w.endsWith("S"));
+
+  pickNewAnswer();
+  updateStatus(`Playing ${WORD_LENGTH}-letter words — good luck!`);
 }
 
 /***********************
@@ -304,6 +344,12 @@ function buildBoard(){
     const row = document.createElement("div");
     row.className = "row";
     row.setAttribute("role", "row");
+
+    // Ensure per-row grid matches current WORD_LENGTH (overrides CSS repeat(5, …) if present)
+    row.style.display = "grid";
+    row.style.gridTemplateColumns = `repeat(${WORD_LENGTH}, var(--tile-size))`;
+    row.style.gap = "var(--gap)";
+
     for (let c = 0; c < WORD_LENGTH; c++){
       const tile = document.createElement("div");
       tile.className = "tile";
@@ -357,7 +403,7 @@ function onEnter(){
     return updateStatus("Not enough letters.");
   }
   const guess = readRow(currentRow);
-  if (STRICT_VALIDATION && !DICTIONARY.has(guess)){
+  if (STRICT_VALIDATION && !CURRENT_WORDS.has(guess)){
     rowShake(currentRow);
     return updateStatus("Not in word list.");
   }
@@ -433,11 +479,11 @@ function revealGuess(guess){
 
     if (guess === answer){
       gameOver = true;
-      shareBtn.disabled = false;
+      shareBtn && (shareBtn.disabled = false);
       updateStatus(randomCongrats());
     } else if (currentRow === MAX_GUESSES - 1){
       gameOver = true;
-      shareBtn.disabled = false;
+      shareBtn && (shareBtn.disabled = false);
       updateStatus(`Answer: ${answer}`);
     } else {
       currentRow++;
@@ -498,18 +544,13 @@ keyboardEl.addEventListener("click", (e) => {
 restartBtn.addEventListener("click", () => {
   clearAllTimeouts();
   isRevealing = false;
+  // Fresh game at the SAME length
+  rebuildForLength(WORD_LENGTH);
+});
 
-  pickNewAnswer();
-  currentRow = 0;
-  currentCol = 0;
-  guesses = [];
-  statusesGrid = [];
-  gameOver = false;
-  shareBtn.disabled = true;
-
-  statusEl.textContent = "";
-  boardEl.innerHTML = "";
-  buildBoard();
-  resetKeyboard();
-  updateStatus("New game—good luck!");
+// Optional: Apply new length if you add #lenSelect + #applyLenBtn in HTML
+applyLenBtn?.addEventListener("click", () => {
+  const chosen = clampLength(parseInt(lenSelect.value, 10));
+  rebuildForLength(chosen);
+  boardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
