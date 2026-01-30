@@ -199,7 +199,7 @@ updateStatus("Loading word list…");
     // Build solutions from dictionary; any word can be the answer
     SOLUTIONS = Array.from(DICTIONARY);
     pickNewAnswer();
-    updateStatus(`Loaded ${SOLUTIONS.length} answers; ${DICTIONARY.size} valid guesses.`);
+    updateStatus(`Loading Complete!`);
   } catch (err) {
     console.warn("Init failed:", err);
     updateStatus('Could not initialize. See console for details or use "Load list".');
@@ -209,6 +209,22 @@ updateStatus("Loading word list…");
 /***********************
  * Loaders
  ***********************/
+
+// PATCH: new state + timeout tracking
+let isRevealing = false;
+const _timeouts = [];
+
+function later(fn, ms) {
+  const id = setTimeout(fn, ms);
+  _timeouts.push(id);
+  return id;
+}
+function clearAllTimeouts() {
+  while (_timeouts.length) {
+    clearTimeout(_timeouts.pop());
+  }
+}
+
 wordFileInput?.addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
   if (!file) { updateStatus("No file selected."); return; }
@@ -328,23 +344,17 @@ function buildKeyboard(){
 function resetKeyboard(){ keyboardEl.querySelectorAll(".key").forEach(k=>k.classList.remove("absent","present","correct")); }
 
 function onLetter(ch){
+  if (isRevealing) return;                 // PATCH
   if (currentCol >= WORD_LENGTH || currentRow >= MAX_GUESSES) return;
   const tile = getTile(currentRow, currentCol);
   tile.textContent = ch;
   tile.classList.add("filled","pop");
-  setTimeout(()=>tile.classList.remove("pop"), 100);
+  later(()=>tile.classList.remove("pop"), 100); // PATCH: use tracked timeout
   currentCol++;
 }
 
-function onDelete(){
-  if (currentCol <= 0) return;
-  currentCol--;
-  const tile = getTile(currentRow, currentCol);
-  tile.textContent = "";
-  tile.classList.remove("filled");
-}
-
 function onEnter(){
+  if (isRevealing) return;                 // PATCH
   if (currentCol < WORD_LENGTH){
     rowShake(currentRow);
     return updateStatus("Not enough letters.");
@@ -355,6 +365,14 @@ function onEnter(){
     return updateStatus("Not in word list.");
   }
   revealGuess(guess);
+}
+
+function onDelete(){
+  if (currentCol <= 0) return;
+  currentCol--;
+  const tile = getTile(currentRow, currentCol);
+  tile.textContent = "";
+  tile.classList.remove("filled");
 }
 
 function readRow(r){
@@ -368,7 +386,7 @@ function getTile(r,c){ return boardEl.children[r].children[c]; }
 function rowShake(r){
   const row = boardEl.children[r];
   row.classList.add("shake");
-  setTimeout(()=>row.classList.remove("shake"), 250);
+  later(()=>row.classList.remove("shake"), 250); // PATCH
 }
 
 function updateStatus(msg){ statusEl.textContent = msg; }
@@ -391,24 +409,32 @@ function scoreGuess(guess, target){
 }
 
 function revealGuess(guess){
+  isRevealing = true;                      // PATCH start lock
+
   const statuses = scoreGuess(guess, answer);
   statusesGrid.push(statuses);
-  const rowIdx = currentRow;
-  const delay = 520;
 
+  const rowIdx = currentRow;
+  const flipStep = 260;
+  const doneDelay = 520; // matches flip
+
+  // Animate each tile sequentially
   statuses.forEach((st, i)=>{
     const tile = getTile(rowIdx, i);
-    setTimeout(()=>{
+    later(()=>{
       tile.classList.add("reveal");
-      setTimeout(()=>{
+      later(()=>{
         tile.classList.add(st);
         paintKeyboard(tile.textContent, st);
-      }, 260);
-    }, i * 260);
+      }, flipStep);                        // half-flip
+    }, i * flipStep);
   });
 
-  setTimeout(()=>{
+  // After the whole row reveals, check win/lose and unlock input
+  const totalDelay = (statuses.length - 1) * flipStep + doneDelay;
+  later(()=>{
     guesses.push(guess);
+
     if (guess === answer){
       gameOver = true;
       shareBtn.disabled = false;
@@ -420,9 +446,11 @@ function revealGuess(guess){
     } else {
       currentRow++;
       currentCol = 0;
-      updateStatus(" ");
+      updateStatus("Keep going!");
     }
-  }, (statuses.length - 1) * 260 + delay);
+
+    isRevealing = false;                   // PATCH unlock
+  }, totalDelay);
 }
 
 function paintKeyboard(letter, newStatus){
@@ -466,16 +494,23 @@ keyboardEl.addEventListener("click", (e) => {
 });
 
 restartBtn.addEventListener("click", () => {
-  pickNewAnswer();
+  // PATCH: cancel any leftover timers/animations
+  clearAllTimeouts();
+  isRevealing = false;
+
+  // Fresh state
+  pickNewAnswer();               // or ensure your init logic has already loaded solutions
   currentRow = 0;
   currentCol = 0;
   guesses = [];
   statusesGrid = [];
   gameOver = false;
   shareBtn.disabled = true;
+
+  // Rebuild the board fresh
   statusEl.textContent = "";
   boardEl.innerHTML = "";
   buildBoard();
   resetKeyboard();
-  updateStatus("New game...");
+  updateStatus("New game—good luck!");
 });
