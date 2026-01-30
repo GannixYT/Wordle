@@ -1,0 +1,39 @@
+name: build-pages
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Fingerprint assets
+        run: |
+          node --version
+          mkdir -p .tools
+          # If you committed .tools/fingerprint.mjs already, this is not needed:
+          # (we assume you added the file to the repo as instructed)
+          node .tools/fingerprint.mjs
+
+      # If you're using Cloudflare Pages GitHub integration,
+      # point Pages to use "dist" as the build output directory.
+      # If you deploy with wrangler:
+      # - name: Publish to Cloudflare Pages
+      #   run: npx wrangler pages deploy dist --project-name <your-project>
+      #   env:
+      #     CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      #     CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+
+      - name: Upload artifact (optional visibility)
+        uses: actions/upload-artifact@v4
+        with:
+          name: site
+          path: dist
