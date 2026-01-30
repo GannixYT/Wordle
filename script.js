@@ -30,7 +30,7 @@ const EXTRA_WORDS = [
   "CREAK","CREAM","CREDO","CREED","CREPT","CRISP","CROAK","CROOK","CROSS","CROWD",
   "CROWN","CRUEL","CRUSH","CRYPT",
   "DAIRY","DANCE","DAREY","DEALT","DEARY","DEBIT","DEBUT","DECAL","DECAY","DECOR",
-  "DEFER","DEIGN","DELAY","DELTA","DEMON","DENIM","DENSE","DEPOT","DEPTH","DETox".replace('ox','OX'),
+  "DEFER","DEIGN","DELAY","DELTA","DEMON","DENIM","DENSE","DEPOT","DEPTH","DETOX",
   "DIARY","DICEY","DIGIT","DINER","DINGO","DIRGE","DISCO","DITCH","DODGE","DOING",
   "DOUBT","DOZEN","DRAFT","DRAMA","DREAM","DRESS","DRIFT","DRINK","DRIVE","DROOP",
   "DROVE","DRUID",
@@ -53,13 +53,13 @@ const EXTRA_WORDS = [
   "GRAPE","GRAPH","GRASP","GRASS","GRATE","GRAVE","GRAZE","GREAT","GREEK","GREEN",
   "GREET","GRIEF","GRILL","GRIME","GRIND","GRIPE","GRIST","GROOM","GROUP","GROUT",
   "GROVE","GUARD","GUESS","GUEST","GUIDE","GUILD",
-  "HABIT","HAREM","HARPY","HARSH","HASte".replace('te','TE'),"HATCH","HATER","HAUNT","HAVEN",
+  "HABIT","HAREM","HARPY","HARSH","HASTE","HATCH","HATER","HAUNT","HAVEN",
   "HAVOC","HAZEL","HEADY","HEARD","HEART","HEATH","HEAVE","HEAVY","HEDGE","HEFTY",
   "HEIST","HERON","HILLY","HINGE","HONEY","HORDE","HORSE","HOTEL","HOUND","HOUSE",
   "HUMAN","HUMID","HUMOR","HUMPH","HUNCH","HURRY","HUSKY","HYDRA",
   "ICIER","ICING","IDEAL","IDIOM","IDYLL","IGLOO","IMAGE","IMBUE","IMPEL","IMPLY",
   "INANE","INBOX","INCUR","INDEX","INDIE","INERT","INFER","INPUT","INTER","IONIC",
-  "IRATE","IRONY","ISLET","ISSUE","ITSELF","IVORY".slice(0,5), // keep to 5
+  "IRATE","IRONY","ISLET","ISSUE","ITSELF","IVORY",
   "JELLY","JETTY","JEWEL","JIMMY","JOINT","JOKER","JOLLY","JOUST","JUDGE","JUICE",
   "JUICY","JUMBO","JUNTA","JUNTO","JUROR",
   "KAPPA","KARMA","KAYAK","KAZOO","KHAKI","KIBIT","KINKY","KIOSK","KISSY","KITTY",
@@ -67,8 +67,8 @@ const EXTRA_WORDS = [
   "LABEL","LABOR","LADEN","LAGER","LAIRY","LAMPS","LANCE","LANKY","LAPSE","LARGE",
   "LASER","LATCH","LATER","LATTE","LAUGH","LAYER","LEACH","LEAFY","LEAKY","LEARN",
   "LEASE","LEASH","LEAST","LEMON","LEMUR","LEVEL","LEVER","LIBEL","LIGHT","LIKEN",
-  "LIKEN".replace('N','N'),"LILAC","LIMBO","LIMIT","LINEN","LINER","LIVER","LOAMY","LOCAL","LOFTY",
-  "LOGIC","LOOSE","LOPED".replace('PED','OSE'),"LORRY","LOSER","LOTUS","LOUSE","LOUSY","LOVER","LOWER","LUCKY","LUNAR",
+  "LILAC","LIMBO","LIMIT","LINEN","LINER","LIVER","LOAMY","LOCAL","LOFTY",
+  "LOGIC","LOOSE","LOOSE","LORRY","LOSER","LOTUS","LOUSE","LOUSY","LOVER","LOWER","LUCKY","LUNAR",
   "LUNCH","LYING","LYRIC",
   "MACAW","MADAM","MADLY","MAFIA","MAGIC","MAIZE","MAJOR","MAKER","MAMBO","MANGO",
   "MANLY","MANOR","MAPLE","MARCH","MARRY","MARSH","MASON","MATCH","MATEY","MATHS",
@@ -84,7 +84,7 @@ const EXTRA_WORDS = [
   "OVINE","OVOID","OWNER","OXIDE",
   "PADDY","PAGAN","PAINT","PALER","PANEL","PANIC","PAPER","PARER","PARKA","PARRY",
   "PARTY","PASTA","PASTE","PASTY","PATCH","PATHS","PATIO","PAUSE","PEACE","PEACH",
-  "PEARL","PECAN","PEDAL","PEEVE","PELTY".replace('TY','TY'),"PERCH","PERKY","PESTO","PETAL","PETTY","PHONE","PHONY",
+  "PEARL","PECAN","PEDAL","PEEVE","PETTY","PERCH","PERKY","PESTO","PETAL","PETTY","PHONE","PHONY",
   "PHOTO","PIANO","PICKY","PIECE","PIETY","PILOT","PINCH","PINEY","PINKY","PINTO",
   "PINUP","PIPER","PITCH","PITHY","PIXEL","PLACE","PLAID","PLAIN","PLANT","PLATE",
   "PLAZA","PLEAD","PLUCK","PLUMB","PLUME","PLUSH","POESY","POINT","POISE","POLAR",
@@ -95,7 +95,7 @@ const EXTRA_WORDS = [
   "QUEUE","QUICK","QUIET","QUILL","QUILT","QUITE","QUOTA","QUOTE",
   "RADAR","RADIO","RANCH","RANDY","RANGE","RAPID","RARER","RATIO","RAVEN","RAZOR",
   "REACH","REACT","READY","REALM","REBEL","RECAP","RECUR","REDID","REDOX","REFER",
-  "REGAL","REIGN","RELAX","Relay".toUpperCase(),"RELISH","REMIT","RENAL","RENEW","REPAY","REPEL","REPLY","RESET",
+  "REGAL","REIGN","RELAX","RELAY","RELISH","REMIT","RENAL","RENEW","REPAY","REPEL","REPLY","RESET",
   "RESIN","RETRO","RETRY","REUSE","REVUE","RHYME","RIDER","RIDGE","RIFLE","RIGHT",
   "RIGID","RINSE","RISEN","RIVAL","RIVER","ROAST","ROBIN","ROBOT","ROGUE","ROUTE",
   "ROVER","ROYAL","RUDDY","RUGBY","RUINS","RURAL",
@@ -108,7 +108,7 @@ const EXTRA_WORDS = [
   "SILKY","SILLY","SINCE","SINEW","SINGE","SKATE","SKILL","SKIMP","SKIRT","SLATE",
   "SLEEK","SLEEP","SLICE","SLIME","SLING","SLOPE","SMALL","SMART","SMEAR","SMILE",
   "SMIRK","SMOKE","SMOKY","SNACK","SNAIL","SNAKE","SNEAK","SNIDE","SNIFF","SNIPE",
-  "SNOOP","SNOTY".replace('Y','Y'),"SNOWY","SOOTY","SOLAR","SOLID","SOLVE","SONIC","SOUND","SOUTH","SPACE",
+  "SNOOP","SNOTY","SNOWY","SOOTY","SOLAR","SOLID","SOLVE","SONIC","SOUND","SOUTH","SPACE",
   "SPADE","SPARE","SPARK","SPEAK","SPEAR","SPEED","SPELL","SPEND","SPICE","SPICY",
   "SPIKE","SPILL","SPINE","SPINY","SPITE","SPLIT","SPOIL","SPOKE","SPOON","SPORT",
   "SPRAY","SPURT","SQUAD","SQUAT","STACK","STAFF","STAGE","STAIR","STAKE","STALE",
@@ -209,8 +209,6 @@ updateStatus("Loading word list…");
 /***********************
  * Loaders
  ***********************/
-
-// PATCH: new state + timeout tracking
 let isRevealing = false;
 const _timeouts = [];
 
@@ -344,17 +342,17 @@ function buildKeyboard(){
 function resetKeyboard(){ keyboardEl.querySelectorAll(".key").forEach(k=>k.classList.remove("absent","present","correct")); }
 
 function onLetter(ch){
-  if (isRevealing) return;                 // PATCH
+  if (isRevealing || gameOver) return;
   if (currentCol >= WORD_LENGTH || currentRow >= MAX_GUESSES) return;
   const tile = getTile(currentRow, currentCol);
   tile.textContent = ch;
   tile.classList.add("filled","pop");
-  later(()=>tile.classList.remove("pop"), 100); // PATCH: use tracked timeout
+  later(()=>tile.classList.remove("pop"), 100);
   currentCol++;
 }
 
 function onEnter(){
-  if (isRevealing) return;                 // PATCH
+  if (isRevealing || gameOver) return;
   if (currentCol < WORD_LENGTH){
     rowShake(currentRow);
     return updateStatus("Not enough letters.");
@@ -368,6 +366,7 @@ function onEnter(){
 }
 
 function onDelete(){
+  if (isRevealing || gameOver) return;
   if (currentCol <= 0) return;
   currentCol--;
   const tile = getTile(currentRow, currentCol);
@@ -386,7 +385,7 @@ function getTile(r,c){ return boardEl.children[r].children[c]; }
 function rowShake(r){
   const row = boardEl.children[r];
   row.classList.add("shake");
-  later(()=>row.classList.remove("shake"), 250); // PATCH
+  later(()=>row.classList.remove("shake"), 250);
 }
 
 function updateStatus(msg){ statusEl.textContent = msg; }
@@ -409,7 +408,7 @@ function scoreGuess(guess, target){
 }
 
 function revealGuess(guess){
-  isRevealing = true;                      // PATCH start lock
+  isRevealing = true;
 
   const statuses = scoreGuess(guess, answer);
   statusesGrid.push(statuses);
@@ -418,7 +417,6 @@ function revealGuess(guess){
   const flipStep = 260;
   const doneDelay = 520; // matches flip
 
-  // Animate each tile sequentially
   statuses.forEach((st, i)=>{
     const tile = getTile(rowIdx, i);
     later(()=>{
@@ -426,11 +424,10 @@ function revealGuess(guess){
       later(()=>{
         tile.classList.add(st);
         paintKeyboard(tile.textContent, st);
-      }, flipStep);                        // half-flip
+      }, flipStep);
     }, i * flipStep);
   });
 
-  // After the whole row reveals, check win/lose and unlock input
   const totalDelay = (statuses.length - 1) * flipStep + doneDelay;
   later(()=>{
     guesses.push(guess);
@@ -449,7 +446,7 @@ function revealGuess(guess){
       updateStatus("Keep going!");
     }
 
-    isRevealing = false;                   // PATCH unlock
+    isRevealing = false;
   }, totalDelay);
 }
 
@@ -468,7 +465,13 @@ function paintKeyboard(letter, newStatus){
 }
 
 function randomCongrats(){
-  const lines = ["Nice! You got it!","Great job!","Boom! Ez Claps!","Sweet! AAAAAAAAAAAAAAAA","Look Mom, I'm in a Splash Text!!"];
+  const lines = [
+    "Nice! You got it!",
+    "Great job!",
+    "Boom! Ez Claps!",
+    "Sweet! AAAAAAAAAAAAAAAA",
+    "Look Mom, I'm in a Splash Text!!"
+  ];
   return lines[Math.floor(Math.random() * lines.length)];
 }
 
@@ -476,7 +479,7 @@ function randomCongrats(){
  * Controls
  ***********************/
 window.addEventListener("keydown", (e) => {
-  if (gameOver) return;
+  if (gameOver || isRevealing) return;
   const key = e.key;
   if (key === "Enter") onEnter();
   else if (key === "Backspace" || key === "Delete") onDelete();
@@ -484,7 +487,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 keyboardEl.addEventListener("click", (e) => {
-  if (gameOver) return;
+  if (gameOver || isRevealing) return;
   const btn = e.target.closest("button.key");
   if (!btn) return;
   const val = btn.dataset.key;
@@ -494,12 +497,11 @@ keyboardEl.addEventListener("click", (e) => {
 });
 
 restartBtn.addEventListener("click", () => {
-  // PATCH: cancel any leftover timers/animations
   clearAllTimeouts();
   isRevealing = false;
 
   // Fresh state
-  pickNewAnswer();               // or ensure your init logic has already loaded solutions
+  pickNewAnswer();
   currentRow = 0;
   currentCol = 0;
   guesses = [];
