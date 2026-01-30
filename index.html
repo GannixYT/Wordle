@@ -12,21 +12,6 @@
     <header class="topbar">
       <h1 class="title">Wordle</h1>
       <div class="controls" style="flex-wrap: wrap; gap:8px; align-items:center">
-        <!-- Length control -->
-        <label for="lenSelect" class="btn" title="Choose word length">Length</label>
-        <select id="lenSelect" class="select" title="Word length">
-          <option value="3">3</option>
-          <option value="4">4</option>
-          <option value="5" selected>5</option>
-          <option value="6">6</option>
-          <option value="7">7</option>
-        </select>
-        <button id="applyLenBtn" class="btn" title="Start new game with this length">Apply</button>
-
-        <!-- Local file loader (works on file:// too) -->
-        <label class="btn" for="wordFile" title="Load word list (.txt)">Load list</label>
-        <input id="wordFile" type="file" accept=".txt" style="display:none" />
-
         <button id="shareBtn" class="btn" title="Share results" disabled>Share</button>
         <button id="restartBtn" class="btn" title="Restart game">Restart</button>
       </div>
