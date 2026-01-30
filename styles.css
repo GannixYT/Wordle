@@ -140,6 +140,24 @@ html,body{
   margin-right: auto;
 }
 
+/* Let the board center itself as a block */
+.board{
+  margin: 12px auto 16px;            /* centers horizontally */
+}
+
+/* Center the keyboard block too */
+.keyboard{
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* (Optional) ensure the game column centers all its children */
+.game{
+  display: flex;
+  flex-direction: column;
+  align-items: center;                /* center title/status/board/keyboard */
+}
+
 .kb-row{
   display:flex;
   gap: 6px;

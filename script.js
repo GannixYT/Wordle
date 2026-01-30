@@ -289,6 +289,8 @@ function rebuildForLength(newLen){
 
   WORD_LENGTH = clampLength(newLen);
 
+  boardEl.style.width = `calc(${WORD_LENGTH} * var(--tile-size) + ${(WORD_LENGTH - 1)} * var(--gap))`;
+
   CURRENT_WORDS = new Set([...DICTIONARY].filter(w => w.length === WORD_LENGTH));
 
   // Reset state
