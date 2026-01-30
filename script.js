@@ -1,9 +1,9 @@
 /***********************
  * Config
- ***********************/
+***********************/
 const WORD_LENGTH = 5;
 const MAX_GUESSES = 6;
-const STRICT_VALIDATION = true; // only accept words in DICTIONARY
+const STRICT_VALIDATION = true;
 
 let SOLUTIONS = [];
 const DICTIONARY = new Set();
