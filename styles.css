@@ -195,3 +195,21 @@ html,body{
     cursor: pointer;
 }
 .select:focus { outline: 1px solid var(--fg); }
+
+.length-panel{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  justify-content:center;
+  margin: 8px auto 4px;     /* centered */
+  max-width: 520px;         /* match your .game width */
+}
+.select{
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--muted);
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.select:focus{ outline: 1px solid var(--fg); }

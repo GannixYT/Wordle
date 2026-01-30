@@ -556,3 +556,8 @@ applyLenBtn?.addEventListener("click", () => {
   rebuildForLength(chosen);
   boardEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
+
+document.getElementById('lenSelect')?.addEventListener('change', (e) => {
+  const val = parseInt(e.target.value, 10);
+  if (!isNaN(val)) rebuildForLength(val);
+});
