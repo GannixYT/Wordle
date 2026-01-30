@@ -196,7 +196,6 @@ updateStatus("Loading word list…");
       }
     }
 
-    // Build solutions from dictionary; any word can be the answer
     SOLUTIONS = Array.from(DICTIONARY);
     pickNewAnswer();
     updateStatus(`Loading Complete!`);
@@ -262,7 +261,7 @@ function mergeWordsFromArray(arr) {
 }
 
 function mergeWordsFromText(text) {
-  if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM
+  if (text && text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
   const lines = (text || "").split(/\r?\n/);
   const before = DICTIONARY.size;
   for (let line of lines) {
@@ -275,10 +274,10 @@ function mergeWordsFromText(text) {
 
 function normalizeWord(s){
   return (s || "").trim()
-    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')      // remove accents
-    .replace(/[\u200B-\u200D\uFEFF]/g,'')                  // zero-width/BOM
-    .replace(/[’'`´]/g,'')                                 // apostrophes
-    .replace(/[^A-Za-z]/g,'')                              // keep letters only
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[\u200B-\u200D\uFEFF]/g,'')
+    .replace(/[’'`´]/g,'')
+    .replace(/[^A-Za-z]/g,'')
     .toUpperCase();
 }
 
@@ -415,7 +414,7 @@ function revealGuess(guess){
 
   const rowIdx = currentRow;
   const flipStep = 260;
-  const doneDelay = 520; // matches flip
+  const doneDelay = 520;
 
   statuses.forEach((st, i)=>{
     const tile = getTile(rowIdx, i);
@@ -443,7 +442,7 @@ function revealGuess(guess){
     } else {
       currentRow++;
       currentCol = 0;
-      updateStatus("Keep going!");
+      updateStatus("");
     }
 
     isRevealing = false;
@@ -500,7 +499,6 @@ restartBtn.addEventListener("click", () => {
   clearAllTimeouts();
   isRevealing = false;
 
-  // Fresh state
   pickNewAnswer();
   currentRow = 0;
   currentCol = 0;
@@ -509,7 +507,6 @@ restartBtn.addEventListener("click", () => {
   gameOver = false;
   shareBtn.disabled = true;
 
-  // Rebuild the board fresh
   statusEl.textContent = "";
   boardEl.innerHTML = "";
   buildBoard();
