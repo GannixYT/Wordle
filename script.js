@@ -14,19 +14,25 @@ let CURRENT_WORDS = new Set();  // filtered by current WORD_LENGTH
 
 const REMOTE_WORDLIST_URL = "wordlist.txt";
 
-// --- Daily routing & keys ---
+// --- Mode & day helpers ---
 function isDailyMode() {
-  // Daily mode when URL hash is #daily
+  // Use hash routing: #daily vs anything else is Free Play
   return location.hash === '#daily';
 }
 
-// YYYY-MM-DD in local time (sufficient for a student project)
 function todayKey() {
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+// Build the storage key prefix for the current mode/day/length
+function keyPrefix() {
+  const len = WORD_LENGTH;
+  if (isDailyMode()) return `daily_${todayKey()}_${len}`;
+  return `free_${len}`;
 }
 
 // Namespacing for today's daily state (per length)
@@ -180,7 +186,6 @@ const statusEl      = document.getElementById("status");
 const shareBtn      = document.getElementById("shareBtn");
 const restartBtn    = document.getElementById("restartBtn");
 const wordFileInput = document.getElementById("wordFile");
-// Optional controls (if present in your HTML)
 const lenSelect     = document.getElementById("lenSelect");
 const applyLenBtn   = document.getElementById("applyLenBtn");
 
@@ -195,25 +200,21 @@ updateStatus("Loading word list…");
   try {
     let added = 0;
 
-    // 1) Embedded list inside index.html (if any)
     const embeddedEl = document.getElementById("wordlist");
     if (embeddedEl && embeddedEl.textContent && embeddedEl.textContent.trim().length) {
       added += mergeWordsFromText(embeddedEl.textContent);
     }
 
-    // 2) Built-in extras (always)
     added += mergeWordsFromArray(EXTRA_WORDS);
 
-    // 3) Remote file (if hosting over http/https)
     if (REMOTE_WORDLIST_URL) {
       try {
         added += await loadWordListFromUrl(REMOTE_WORDLIST_URL);
       } catch (_) {
-        // ignore; we will fall back to manual picker if none loaded
+        // ignore; will fall back to manual picker if none loaded
       }
     }
 
-    // 4) If still empty (e.g., file:// and no embedded list), open picker
     if (DICTIONARY.size === 0) {
       if (wordFileInput) {
         updateStatus('No word list found. Please choose your .txt file…');
@@ -224,9 +225,38 @@ updateStatus("Loading word list…");
         return;
       }
     }
+    
+    function resetFreePlay(len) {
+      localStorage.removeItem(`free_3_state`);
+	  localStorage.removeItem(`free_4_state`);
+	  localStorage.removeItem(`free_5_state`);
+	  localStorage.removeItem(`free_6_state`);
+	  localStorage.removeItem(`free_7_state`);
+      localStorage.removeItem(`free_3_completed`);
+	  localStorage.removeItem(`free_4_completed`);
+	  localStorage.removeItem(`free_5_completed`);
+	  localStorage.removeItem(`free_6_completed`);
+	  localStorage.removeItem(`free_7_completed`);
+      localStorage.removeItem(`free_3_answer`);
+	  localStorage.removeItem(`free_4_answer`);
+	  localStorage.removeItem(`free_5_answer`);
+	  localStorage.removeItem(`free_6_answer`);
+	  localStorage.removeItem(`free_7_answer`);
+	  
+    }
 
-    // Initial length from <select> if present
-    const desiredLen = lenSelect ? parseInt(lenSelect.value || "5", 10) : 5;
+    const nav = performance.getEntriesByType?.('navigation')?.[0];
+    const isReload = nav ? nav.type === 'reload' : false;
+
+    const desiredLen = lenSelect ? parseInt(lenSelect.value || '5', 10) : 5;
+
+    // Auto-restart Free Play on page reload only
+    if (!isDailyMode() && isReload) {
+      resetFreePlay(desiredLen);
+      // If you want to wipe all lengths on reload, uncomment:
+      // for (const L of ALLOWED_LENGTHS) resetFreePlay(L);
+    }
+
     rebuildForLength(desiredLen);
   } catch (err) {
     console.warn("Init failed:", err);
@@ -314,7 +344,7 @@ function rebuildForLength(newLen){
 
   CURRENT_WORDS = new Set([...DICTIONARY].filter(w => w.length === WORD_LENGTH));
 
-  // Reset state
+  // Reset state (we will attempt to restore immediately after)
   currentRow = 0;
   currentCol = 0;
   guesses = [];
@@ -341,7 +371,14 @@ function rebuildForLength(newLen){
   // SOLUTIONS = SOLUTIONS.filter(w => !w.endsWith("S"));
 
   pickNewAnswer();
-  updateStatus(`Playing ${WORD_LENGTH}-letter words — good luck!`);
+
+  // Try to restore any saved state for this mode/length (and date for daily)
+  const restored = loadGameState();
+
+  if (!restored) {
+    updateStatus(`Playing ${WORD_LENGTH}-letter words — good luck!`);
+  }
+
   updateUiForMode();
 }
 
@@ -352,7 +389,14 @@ function rebuildForLength(newLen){
 function pickNewAnswer() { 
   answer = isDailyMode() ? pickDailyAnswer() : pickRandomAnswer(); 
 }
-function pickRandomAnswer(){ return SOLUTIONS[Math.floor(Math.random()*SOLUTIONS.length)]; }
+function pickRandomAnswer() {
+  const key = `free_${WORD_LENGTH}_answer`;
+  const saved = localStorage.getItem(key);
+  if (saved && CURRENT_WORDS.has(saved)) return saved;   // reuse existing answer
+  const a = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
+  localStorage.setItem(key, a);
+  return a;
+}
 function pickDailyAnswer(){
   const epoch = new Date(`${DAILY_EPOCH}T00:00:00`);
   const now   = new Date();
@@ -421,6 +465,8 @@ function onLetter(ch){
   tile.classList.add("filled","pop");
   later(()=>tile.classList.remove("pop"), 100);
   currentCol++;
+  // Save after every input
+  saveGameState();
 }
 
 function onEnter(){
@@ -444,6 +490,8 @@ function onDelete(){
   const tile = getTile(currentRow, currentCol);
   tile.textContent = "";
   tile.classList.remove("filled");
+  // Save after every deletion
+  saveGameState();
 }
 
 function readRow(r){
@@ -508,12 +556,12 @@ function revealGuess(guess){
       gameOver = true;
       shareBtn && (shareBtn.disabled = false);
       updateStatus(randomCongrats());
-	  if (isDailyMode()) localStorage.setItem(dailyKeys().completed, '1')
+      if (isDailyMode()) localStorage.setItem(dailyKeys().completed, '1');
     } else if (currentRow === MAX_GUESSES - 1){
       gameOver = true;
       shareBtn && (shareBtn.disabled = false);
       updateStatus(`Answer: ${answer}`);
-	  if (isDailyMode()) localStorage.setItem(dailyKeys().completed, '1');
+      if (isDailyMode()) localStorage.setItem(dailyKeys().completed, '1');
     } else {
       currentRow++;
       currentCol = 0;
@@ -521,6 +569,8 @@ function revealGuess(guess){
     }
 
     isRevealing = false;
+    // Save after reveal completes
+    saveGameState();
   }, totalDelay);
 }
 
@@ -571,9 +621,14 @@ keyboardEl.addEventListener("click", (e) => {
 });
 
 restartBtn.addEventListener("click", () => {
+  // Hard lock: Daily cannot be restarted
+  if (isDailyMode()) return;
+  // Clear Free Play save so you get a fresh puzzle
+  localStorage.removeItem(`${keyPrefix()}_state`);
+  localStorage.removeItem(`${keyPrefix()}_completed`);
+  localStorage.removeItem(`free_${WORD_LENGTH}_answer`);
   clearAllTimeouts();
   isRevealing = false;
-  // Fresh game at the SAME length
   rebuildForLength(WORD_LENGTH);
 });
 
@@ -642,3 +697,80 @@ setInterval(() => {
     setActiveTabUi();
   }
 }, 60_000);
+
+function saveGameState() {
+  const data = {
+    v: 1,
+    mode: isDailyMode() ? 'daily' : 'free',
+    date: isDailyMode() ? todayKey() : null,
+    len: WORD_LENGTH,
+    answer,
+    currentRow,
+    currentCol,
+    guesses,
+    statusesGrid,
+    gameOver
+  };
+  localStorage.setItem(`${keyPrefix()}_state`, JSON.stringify(data));
+}
+
+function loadGameState() {
+  const raw = localStorage.getItem(`${keyPrefix()}_state`);
+  if (!raw) return false;
+  let data; try { data = JSON.parse(raw); } catch { return false; }
+
+  // Validate saved payload
+  if (data.len !== WORD_LENGTH) return false;
+  if (isDailyMode() && data.date !== todayKey()) return false;
+
+  // Prefer the saved answer if it still exists in the current word set
+  if (data.answer && CURRENT_WORDS.has(data.answer)) {
+    answer = data.answer;
+  }
+
+  // Clear board visuals and rebuild from saved state
+  for (let r = 0; r < MAX_GUESSES; r++) {
+    for (let c = 0; c < WORD_LENGTH; c++) {
+      const tile = getTile(r, c);
+      tile.textContent = '';
+      tile.className = 'tile';
+    }
+  }
+  resetKeyboard();
+
+  guesses = Array.isArray(data.guesses) ? data.guesses : [];
+  statusesGrid = Array.isArray(data.statusesGrid) ? data.statusesGrid : [];
+  currentRow = data.currentRow ?? 0;
+  currentCol = data.currentCol ?? 0;
+  gameOver = !!data.gameOver;
+
+  // Paint committed rows
+  for (let r = 0; r < guesses.length; r++) {
+    const g = guesses[r];
+    const st = statusesGrid[r] || [];
+    for (let i = 0; i < WORD_LENGTH; i++) {
+      const ch = g?.[i] ?? '';
+      const tile = getTile(r, i);
+      tile.textContent = ch;
+      if (ch) tile.classList.add('filled');
+      const s = st[i];
+      if (s) {
+        tile.classList.add('reveal', s);  // final state
+        paintKeyboard(ch, s);
+      }
+    }
+  }
+
+  // Restore partial row letters (if any)
+  if (!gameOver && currentRow < MAX_GUESSES) {
+    const partial = guesses[currentRow] || '';
+    for (let i = 0; i < currentCol; i++) {
+      const tile = getTile(currentRow, i);
+      tile.textContent = partial[i] || '';
+      tile.classList.add('filled');
+    }
+  }
+
+  shareBtn && (shareBtn.disabled = !gameOver);
+  return true;
+}
