@@ -14,8 +14,29 @@ let CURRENT_WORDS = new Set();  // filtered by current WORD_LENGTH
 
 const REMOTE_WORDLIST_URL = "wordlist.txt";
 
-// Optional daily mode
-const DAILY_MODE = false;
+// --- Daily routing & keys ---
+function isDailyMode() {
+  // Daily mode when URL hash is #daily
+  return location.hash === '#daily';
+}
+
+// YYYY-MM-DD in local time (sufficient for a student project)
+function todayKey() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Namespacing for today's daily state (per length)
+function dailyKeys(len = WORD_LENGTH) {
+  const date = todayKey();
+  return {
+    completed: `daily_completed_${date}_${len}`,
+    state:     `daily_state_${date}_${len}`
+  };
+}
 const DAILY_EPOCH = "2026-01-01";
 
 // (Your extras – kept intact)
@@ -321,12 +342,16 @@ function rebuildForLength(newLen){
 
   pickNewAnswer();
   updateStatus(`Playing ${WORD_LENGTH}-letter words — good luck!`);
+  updateUiForMode();
 }
 
 /***********************
  * Answer selection
  ***********************/
-function pickNewAnswer(){ answer = DAILY_MODE ? pickDailyAnswer() : pickRandomAnswer(); }
+
+function pickNewAnswer() { 
+  answer = isDailyMode() ? pickDailyAnswer() : pickRandomAnswer(); 
+}
 function pickRandomAnswer(){ return SOLUTIONS[Math.floor(Math.random()*SOLUTIONS.length)]; }
 function pickDailyAnswer(){
   const epoch = new Date(`${DAILY_EPOCH}T00:00:00`);
@@ -483,10 +508,12 @@ function revealGuess(guess){
       gameOver = true;
       shareBtn && (shareBtn.disabled = false);
       updateStatus(randomCongrats());
+	  if (isDailyMode()) localStorage.setItem(dailyKeys().completed, '1')
     } else if (currentRow === MAX_GUESSES - 1){
       gameOver = true;
       shareBtn && (shareBtn.disabled = false);
       updateStatus(`Answer: ${answer}`);
+	  if (isDailyMode()) localStorage.setItem(dailyKeys().completed, '1');
     } else {
       currentRow++;
       currentCol = 0;
@@ -561,3 +588,57 @@ document.getElementById('lenSelect')?.addEventListener('change', (e) => {
   const val = parseInt(e.target.value, 10);
   if (!isNaN(val)) rebuildForLength(val);
 });
+
+// Default to Free Play if no hash
+if (!location.hash) location.hash = '#play';
+
+// Switch modes by changing the hash
+window.addEventListener('hashchange', () => {
+  clearAllTimeouts();
+  rebuildForLength(WORD_LENGTH);
+  setActiveTabUi();
+});
+
+function setActiveTabUi() {
+  const daily = isDailyMode();
+  document.getElementById('tab-play')?.classList.toggle('active', !daily);
+  document.getElementById('tab-daily')?.classList.toggle('active', daily);
+}
+setActiveTabUi();
+
+function updateUiForMode() {
+  if (isDailyMode()) {
+    // Disable restarting to prevent replaying today’s daily
+    if (restartBtn) {
+      restartBtn.disabled = true;
+      restartBtn.title = 'Daily mode resets at midnight';
+    }
+    // If you already finished today, lock input and allow sharing
+    const done = localStorage.getItem(dailyKeys().completed);
+    if (done) {
+      gameOver = true;
+      if (shareBtn) shareBtn.disabled = false;
+      updateStatus('You’ve completed today’s puzzle. Come back tomorrow!');
+    }
+  } else {
+    if (restartBtn) {
+      restartBtn.disabled = false;
+      restartBtn.title = 'Restart game';
+    }
+  }
+}
+
+// Refresh daily at midnight (checks every minute)
+setInterval(() => {
+  if (!isDailyMode()) return;
+  // If the day changed, rebuild with the new daily seed
+  const keyNow = todayKey();
+  const prev = window.__lastDayKey;
+  if (!prev) { window.__lastDayKey = keyNow; return; }
+  if (prev !== keyNow) {
+    window.__lastDayKey = keyNow;
+    clearAllTimeouts();
+    rebuildForLength(WORD_LENGTH);
+    setActiveTabUi();
+  }
+}, 60_000);

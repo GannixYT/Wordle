@@ -213,3 +213,21 @@ html,body{
   cursor: pointer;
 }
 .select:focus{ outline: 1px solid var(--fg); }
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+.tab {
+  padding: 6px 10px;
+  border: 1px solid var(--muted);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--fg);
+  user-select: none;
+}
+.tab.active {
+  border-color: var(--fg);
+  font-weight: 700;
+}
