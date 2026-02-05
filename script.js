@@ -13,6 +13,7 @@ const DICTIONARY = new Set();   // master: all words (3–7)
 let CURRENT_WORDS = new Set();  // filtered by current WORD_LENGTH
 
 const REMOTE_WORDLIST_URL = "wordlist.txt";
+const DAILY_SALT = "p3pP3r-3xAmpl3-2026-02"; // change periodically
 
 // --- Mode & day helpers ---
 function isDailyMode() {
@@ -365,10 +366,7 @@ function rebuildForLength(newLen){
     return;
   }
 
-  SOLUTIONS = Array.from(CURRENT_WORDS);
-
-  // (Optional) Wordle-like: allow plurals as guesses but not answers
-  // SOLUTIONS = SOLUTIONS.filter(w => !w.endsWith("S"));
+  SOLUTIONS = Array.from(CURRENT_WORDS).sort();;
 
   pickNewAnswer();
 
@@ -385,6 +383,25 @@ function rebuildForLength(newLen){
 /***********************
  * Answer selection
  ***********************/
+// Simple 32-bit string hash (e.g., cyrb53-lite / djb2-style); good enough for seeding
+function hashString32(str) {
+  let h = 2166136261 >>> 0; // FNV-like base
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+// Mulberry32 PRNG (fast, deterministic)
+function mulberry32(seed) {
+  return function() {
+    let t = (seed += 0x6D2B79F5) | 0;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 function pickNewAnswer() { 
   answer = isDailyMode() ? pickDailyAnswer() : pickRandomAnswer(); 
@@ -397,13 +414,19 @@ function pickRandomAnswer() {
   localStorage.setItem(key, a);
   return a;
 }
-function pickDailyAnswer(){
+
+function pickDailyAnswer() {
   const epoch = new Date(`${DAILY_EPOCH}T00:00:00`);
-  const now   = new Date();
-  const msPerDay = 86400000;
-  const days = Math.floor((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
-                           - Date.UTC(epoch.getFullYear(), epoch.getMonth(), epoch.getDate()))/msPerDay);
-  const idx = ((days % SOLUTIONS.length) + SOLUTIONS.length) % SOLUTIONS.length;
+  const now = new Date();
+  const days = Math.floor(
+    (Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) -
+     Date.UTC(epoch.getFullYear(), epoch.getMonth(), epoch.getDate())) / 86400000
+  );
+  // Include the salt
+  const seedStr = `daily|${days}|len=${WORD_LENGTH}|v1|salt=${DAILY_SALT}`;
+  const seed = hashString32(seedStr);
+  const rnd = mulberry32(seed);
+  const idx = Math.floor(rnd() * SOLUTIONS.length);
   return SOLUTIONS[idx];
 }
 
