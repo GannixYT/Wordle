@@ -50,6 +50,11 @@ html,body{
   padding-right: 64px
 }
 
+.title > a {
+  text-decoration: none;
+  color: #ffffff;
+}
+
 .controls{
   display:flex; gap:8px;
 }
